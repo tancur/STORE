@@ -134,10 +134,10 @@ const gqlOrderFind = (count, id) => {
 };
 
 // проверка писанины
+//
+const store = createStore(promiseReducer);
 
-// const store = createStore(promiseReducer);
-
-// store.subscribe(() => console.log(store.getState()));
+store.subscribe(() => console.log(store.getState()));
 
 store.dispatch(actionPromise("Корневой каталог: getCategories", gqlRootCats()));
 

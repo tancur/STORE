@@ -45,7 +45,7 @@ const actionCartDel = (good) => ({ type: "CART_DEL", good });
 
 const actionCartSet = (good, count = 1) => ({ type: "CART_SET", count, good });
 
-const actionCartClear = () => ({type: 'CART_CLEAR'})
+const actionCartClear = () => ({ type: "CART_CLEAR" });
 
 // функция редюсер
 
@@ -111,46 +111,105 @@ function cartReducer(state = {}, { type, count, good }) {
       return newState;
     }
   }
-  
+
   if (type === "CART_CLEAR") {
-    
-    return state = {};
-  }
-  
-  else {
+    return (state = {});
+  } else {
     return state;
   }
 }
 
-// проверка
+// localStoredReducer
+//  Декоратор возвращает функцию-обертку (тоже редьюсер)
 
-const store = createStore(cartReducer);
+
+function localStoredReducer(originalReducer, localStorageKey) {
+  let firstRun = true;
+
+  return function wrapper(state, action) {
+    if (firstRun) {
+      firstRun = false;
+      const keyData = localStorage.getItem(localStorageKey);
+
+      if (keyData !== "{}" && keyData !== null) {
+        return JSON.parse(keyData);
+      }
+    }
+
+    const newState = originalReducer(state, action);
+    localStorage.setItem(localStorageKey, JSON.stringify(newState));
+    return newState;
+  };
+}
+
+// =========!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!==================================================
+
+// Работает по отдельности basket.js и  promise.js . для чего нужна часть с токеном не понимаю в принципе,
+//  куда ее прикрутить (файл token.js он тоже работает но для чего непонятно)
+
+//  если записываю все вместе в 1 файл, работает только корзина, остальное не подает признаков жизни
+
+const store = createStore(localStoredReducer(cartReducer, "cart"));
 
 store.subscribe(() => console.log(store.getState())); //
 
-console.log(store.getState()); //{}
-
 store.dispatch(actionCartAdd({ _id: "пиво", price: 50 }));
-// {пиво: {good: {_id: 'пиво', price: 50}, count: 1}}
-store.dispatch(actionCartAdd({ _id: "чіпси", price: 75 }));
-// {
-// пиво: {good: {_id: 'пиво', price: 50}, count: 1},
-// чіпси: {good: {_id: 'чіпси', price: 75}, count: 1},
-//}
-store.dispatch(actionCartAdd({ _id: "пиво", price: 50 }, 5));
-// {
-// пиво: {good: {_id: 'пиво', price: 50}, count: 6},
-// чіпси: {good: {_id: 'чіпси', price: 75}, count: 1},
-//}
-store.dispatch(actionCartSet({ _id: "чіпси", price: 75 }, 2));
-// {
-// пиво: {good: {_id: 'пиво', price: 50}, count: 6},
-// чіпси: {good: {_id: 'чіпси', price: 75}, count: 2},
-//}
+store.dispatch(actionCartAdd({ _id: "чипсы", price: 75 }));
 
-store.dispatch(actionCartSub({ _id: "пиво", price: 50 }, 4));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// =================================================
+
+// // проверка cartReducer  рабочая
+
+// const store = createStore(cartReducer);
+
+// store.subscribe(() => console.log(store.getState())); //
+
+// console.log(store.getState()); //{}
+
+// store.dispatch(actionCartAdd({ _id: "пиво", price: 50 }));
+// // {пиво: {good: {_id: 'пиво', price: 50}, count: 1}}
+// store.dispatch(actionCartAdd({ _id: "чіпси", price: 75 }));
 // {
-// пиво: {good: {_id: 'пиво', price: 50}, count: 2},
-// чіпси: {good: {_id: 'чіпси', price: 75}, count: 2},
-//}
-store.dispatch(actionCartClear()) // {}
+// // пиво: {good: {_id: 'пиво', price: 50}, count: 1},
+// // чіпси: {good: {_id: 'чіпси', price: 75}, count: 1},
+// }
+// store.dispatch(actionCartAdd({ _id: "пиво", price: 50 }, 5));
+// {
+// // пиво: {good: {_id: 'пиво', price: 50}, count: 6},
+// // чіпси: {good: {_id: 'чіпси', price: 75}, count: 1},
+// }
+// store.dispatch(actionCartSet({ _id: "чіпси", price: 75 }, 2));
+// {
+// // пиво: {good: {_id: 'пиво', price: 50}, count: 6},
+// // чіпси: {good: {_id: 'чіпси', price: 75}, count: 2},
+// }
+
+// store.dispatch(actionCartSub({ _id: "пиво", price: 50 }, 4));
+// {
+// // пиво: {good: {_id: 'пиво', price: 50}, count: 2},
+// // чіпси: {good: {_id: 'чіпси', price: 75}, count: 2},
+// }
+// store.dispatch(actionCartClear()); // {}
