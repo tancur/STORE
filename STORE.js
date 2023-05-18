@@ -238,9 +238,7 @@ const gqlRootCats = () => {
       CategoryFind(query: $q) {
         _id
         name
-        goods {
-          name
-        }
+       
       }
     }`;
 
@@ -357,6 +355,7 @@ function authReducer(state = {}, { type, token }) {
 
     return { token, payload };
   } else if (type === "AUTH_LOGOUT") {
+    delete localStorage.authToken;
     return {};
   } else {
     return state;
@@ -373,7 +372,7 @@ function authReducer(state = {}, { type, token }) {
 const reducers = {
   basket: localStoredReducer(cartReducer, "basket"),
   query: promiseReducer,
-  auth: localStoredReducer(authReducer,'auth'),
+  auth: localStoredReducer(authReducer, "auth"),
 };
 
 // Комбайн редюсеров
@@ -402,22 +401,130 @@ function combineReducers(reducers) {
   return totalReducer;
 }
 
+// ВЫВОД КОРНЕВОГО КАТАЛОГА В БОКОВОЙ ПАЕНЛИ
 
+function asideRootCatalog(resultOfGetState) {
+  // выборка из пайлоада
+  let rootCategories =
+    resultOfGetState.query.getCategories.payload.CategoryFind;
+  // заготовка для списка
+  let aside = document.getElementById("asideRootCategory");
+  for (let category of rootCategories) {
+    let a = document.createElement("a");
+
+    a.className = "aForAside";
+    a.href = `#/category/${category._id}`;
+    a.innerHTML = category.name;
+    aside.append(a);
+
+    // пробую Window.onhashchange переход на следующий уровень, вывод каталога с картинками
+
+    window.onhashchange = async function () {
+      const hash = window.location.hash.split("/").pop();
+      if (hash) {
+        // console.log(hash)
+        store.dispatch(
+          actionPromise(
+            "getOneCatWithGoodsImgs",
+            await gqlOneCatWithGoodsImgs(hash)
+          )
+        );
+        aside.innerHTML = "";
+
+        // ошибка возникает изза этой подписки
+        store.subscribe(() => {
+          cartOfCategory(store.getState());
+        });
+      }
+    };
+  }
+}
+
+// ВЫВОД КАТАЛОГА ПОДКАТЕГОРИЙ
+
+function cartOfCategory(state) {
+  // выборка из пайлоада
+  let podCategory = state.query.getOneCatWithGoodsImgs.payload.CategoryFindOne;
+
+  console.log(podCategory);
+
+  let nameOfCategory = document.getElementById("podCat");
+
+  nameOfCategory.innerHTML = podCategory.name;
+
+  let currentCategory = document.getElementById("containerOfCategory");
+  currentCategory.innerHTML = "";
+  for (let elem of podCategory.goods) {
+    let cardsItem = document.createElement("div");
+    cardsItem.className = "cards-item";
+
+    let cardsInside = document.createElement("div");
+    cardsInside.className = "inside";
+
+    let img = document.createElement("img");
+    img.className = "img-card";
+    img.src = `http://shop-roles.node.ed.asmer.org.ua/${elem.images[0].url}`;
+
+
+    let h = document.createElement("h2");
+    h.className = "h-card"; 
+    h.innerHTML = elem.name;
+
+    let p = document.createElement("p");
+    p.className = "p-card"; 
+    p.innerHTML = `${elem.price} грн.`;
+    
+    let button = document.createElement('button');
+    button.className = "button";
+    button.innerText = "Подробнее"
+
+    
+    cardsInside.append(img);
+    cardsInside.append(h);
+    cardsInside.append(p);
+    cardsItem.append(cardsInside);
+    currentCategory.append(cardsItem);
+    cardsItem.appendChild(button)
+    
+  }
+}
 
 // =========================================================
 
-// ТЕСТИРОВАНИЕ НЭ ПРАЦЮЭ
+// ТЕСТИРОВАНИЕ
 
 // ===========================================================
 
+const store = createStore(combineReducers(reducers));
 
-const store = createStore(combineReducers(reducers))
+// Корневой каталог первый запуск
 
-store.subscribe(() => console.log(store.getState()))
+store.dispatch(actionPromise("getCategories", gqlRootCats()));
+
+store.subscribe(() => {
+  console.log(store.getState());
+  asideRootCatalog(store.getState());
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// store.subscribe(() => console.log(store.getState()))
 
 // ==============================================================
 
-store.dispatch(actionCartAdd({ _id: "пиво", price: 50 }));   
+// store.dispatch(actionCartAdd({ _id: "пиво", price: 50 }));
 
 // const store = createStore(localStoredReducer(cartReducer, "cart"));
 
@@ -426,53 +533,43 @@ store.dispatch(actionCartAdd({ _id: "пиво", price: 50 }));
 // store.dispatch(actionCartAdd({ _id: "пиво", price: 50 }));
 // store.dispatch(actionCartAdd({ _id: "чипсы", price: 75 }));
 
+// то что ниже работает
 
-// то что ниже работает 
+// store.dispatch(
+//   actionPromise(
+//     "Подкаталог с картиНками: getOneCatWithGoodsImgs",
+//     gqlOneCatWithGoodsImgs("62c94b10b74e1f5f2ec1a0dd")
+//   )
+// );
 
+// store.dispatch(
+//   actionPromise(
+//     "Подкаталог с картиНками и описанием: getCatsWithImgsDescription",
+//     gqlCatsWithImgsDescription("62d57ab8b74e1f5f2ec1a148")
+//   )
+// );
 
+// store.dispatch(
+//   actionPromise("РеГистрация: getRegister", gqlRegister("vasya1999", "пороль"))
+// );
 
-store.dispatch(actionPromise("Корневой каталог: getCategories", gqlRootCats()));
+// store.dispatch(
+//   actionPromise("Запит на логин: getLogin", gqlLogin("katya145", "пороль"))
+// );
 
-store.dispatch(
-  actionPromise(
-    "Подкаталог с картиНками: getOneCatWithGoodsImgs",
-    gqlOneCatWithGoodsImgs("62c94b10b74e1f5f2ec1a0dd")
-  )
-);
+// store.dispatch(
+//   actionPromise(
+//     "Запрос истории заказов: getOrderFind",
+//     gqlOrderFind(3, "62d3099ab74e1f5f2ec1a125")
+//   )
+// );
 
-store.dispatch(
-  actionPromise(
-    "Подкаталог с картиНками и описанием: getCatsWithImgsDescription",
-    gqlCatsWithImgsDescription("62d57ab8b74e1f5f2ec1a148")
-  )
-);
+// // токен отобразился
 
-store.dispatch(
-  actionPromise("РеГистрация: getRegister", gqlRegister("vasya1999", "пороль"))
-);
+// // / сам токен для проверки
+// const token =
+//   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOnsiaWQiOiI2Mzc3ZTEzM2I3NGUxZjVmMmVjMWMxMjUiLCJsb2dpbiI6InRlc3Q1IiwiYWNsIjpbIjYzNzdlMTMzYjc0ZTFmNWYyZWMxYzEyNSIsInVzZXIiXX0sImlhdCI6MTY2ODgxMjQ1OH0.t1eQlRwkcP7v9JxUPMo3dcGKprH-uy8ujukNI7xE3A0";
 
-store.dispatch(
-  actionPromise("Запит на логин: getLogin", gqlLogin("katya145", "пороль"))
-);
-
-store.dispatch(
-  actionPromise(
-    "Запрос истории заказов: getOrderFind",
-    gqlOrderFind(3, "62d3099ab74e1f5f2ec1a125")
-  )
-);
-
-
-
-
-// токен отобразился
-
-// / сам токен для проверки
-const token =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOnsiaWQiOiI2Mzc3ZTEzM2I3NGUxZjVmMmVjMWMxMjUiLCJsb2dpbiI6InRlc3Q1IiwiYWNsIjpbIjYzNzdlMTMzYjc0ZTFmNWYyZWMxYzEyNSIsInVzZXIiXX0sImlhdCI6MTY2ODgxMjQ1OH0.t1eQlRwkcP7v9JxUPMo3dcGKprH-uy8ujukNI7xE3A0";
-
-
-store.dispatch(actionAuthLogin(token))
-
+// store.dispatch(actionAuthLogin(token))
 
 // store.dispatch(actionAuthLogout()) // {}

@@ -1,0 +1,264 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  min-height: 100vh;
+}
+
+header {
+  background-color: rgb(233, 214, 40);
+  display: inline-flex;
+  flex-wrap: nowrap;
+
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 10px;
+}
+
+.aside-1
+/* .aside-2 */
+ {
+  width: 210px;
+  padding-top: 10px;
+  font-weight: bold;
+  flex-shrink: 0;
+
+  }
+
+.aForAside {
+  display:block;
+  padding: 10px;
+  text-align: left;
+}
+
+.aside-1 {
+  background-color: rgb(239, 236, 243);
+  order: -1;
+}
+
+/* .aside-2 {
+  background-color: dimgray;
+} */
+
+#knopka,
+.knopka-btn {
+  display: none;
+}
+
+#knopka {
+  opacity: 0;
+}
+
+.chek-box {
+  text-align: left;
+}
+
+/* @media screen and (max-width: 997px) {
+  .aside-2 {
+    display: none;
+  }
+} */
+
+/* @media screen and (max-width: 759px) {
+  .aside-1 {
+    display: none;
+  } */
+
+  #knopka,
+  .knopka-btn {
+    display: initial;
+  }
+
+  .items {
+    visibility: hidden;
+
+    position: fixed;
+    right: 0;
+
+    top: -30px;
+
+    transition-duration: 1s;
+    transition-timing-function: linear;
+  }
+
+  .knopka-btn {
+    display: block;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 30px;
+    cursor: pointer;
+  }
+
+  .knopka-btn > span,
+  .knopka-btn > span::before,
+  .knopka-btn > span::after {
+    display: block;
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background-color: black;
+  }
+
+  .knopka-btn > span::after {
+    content: "";
+    top: 5px;
+  }
+  .knopka-btn > span::before {
+    content: "";
+    top: -5px;
+  }
+
+  #knopka:checked ~ .knopka-btn > span::before {
+    top: 0;
+    transform: rotate(0);
+    background-color: blueviolet;
+  }
+
+  #knopka:checked ~ .knopka-btn > span::after {
+    top: 0;
+    transform: rotate(90deg);
+    background-color: blueviolet;
+  }
+  #knopka:checked ~ .knopka-btn > span {
+    transform: rotate(45deg);
+  }
+
+  #knopka:checked ~ .items {
+    visibility: visible;
+    top: 30px;
+  }
+
+
+footer {
+  background-color: chartreuse;
+  height: 5vh;
+  padding-top: 10px;
+  vertical-align: middle;
+}
+
+main {
+  display: flex;
+  flex-grow: 1;
+}
+
+.p-card {
+  padding: 20px;
+  font-size: x-large;
+  text-align: center;
+}
+
+.items {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-around;
+
+  list-style: none;
+}
+
+.nax {
+  padding: 3px;
+}
+
+.nax a {
+  text-decoration: none;
+}
+.nax:hover {
+  background-color: rgb(223, 158, 18);
+  border-radius: 15px;
+}
+
+.our-works {
+  text-transform: uppercase;
+  font-weight: bold;
+  line-height: 100px;
+  transition-duration: 3s;
+  
+}
+
+.cards-container {
+  display: flex;
+
+  flex-wrap: wrap;
+  justify-content: center;
+
+  margin: 0 auto;
+  padding-bottom: 10px;
+  gap: 15px;
+}
+
+.cards-item {
+  display: flex;
+  flex-direction: column;
+
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  border: 2px solid rgb(220, 208, 228);
+  border-radius: 15px;
+  width: calc(100% / 3 - 20px);
+  min-width: 190px;
+}
+
+.img-card {
+  height: 200px;
+  max-width: 200px;
+  border-radius: 15%;
+  /* border: 10px solid grey; */
+}
+
+.cards-item p {
+  color: rgb(85, 40, 8);
+}
+
+.inside {
+  padding-top: 10px;
+}
+
+.button {
+  background-color: rgb(213, 200, 224);
+  color: rgb(4, 4, 27);
+  border: none;
+  text-align: center;
+  height: 50px;
+  width: 180px;
+  font-size: 15px;
+  font-weight: bold;
+  padding: 5px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+/* .pivo {
+  background-image: url(./пивасик.jpg);
+  background-size: 180px 50px;
+} */
+
+.our-works:hover {
+  cursor: pointer;
+  color: blueviolet;
+  transform: scale(2);
+}
+
+.cards-item:hover {
+  background-color: chartreuse;
+  transition-duration: 2s;
+  transition-timing-function: linear;
+}
+
+.img-card:hover {
+  cursor: pointer;
+  border: 1px rgb(73, 66, 71) solid;
+}
+
+.button:hover {
+  cursor: pointer;
+  background-color: brown;
+  color: rgb(123, 189, 189);
+}
