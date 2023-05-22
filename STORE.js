@@ -53,14 +53,14 @@ const actionCartClear = () => ({ type: "CART_CLEAR" });
 
 function cartReducer(state = {}, { type, count, good }) {
   if (type === "CART_ADD") {
-    const { _id, price } = good;
+    const { _id } = good;
     if (count < 0) {
       return { ...state };
     } else {
       return {
         ...state,
         [_id]: {
-          good: { _id, price },
+          good,
           count: state[_id] ? state[_id].count + count : count,
         },
       };
@@ -68,7 +68,7 @@ function cartReducer(state = {}, { type, count, good }) {
   }
 
   if (type === "CART_SUB") {
-    const { _id, price } = good;
+    const { _id } = good;
     const newCount = state[_id].count - count;
     if (count < 0) {
       return { ...state };
@@ -77,7 +77,7 @@ function cartReducer(state = {}, { type, count, good }) {
       return {
         ...state,
         [_id]: {
-          good: { _id, price },
+          good,
           count: newCount,
         },
       };
@@ -96,14 +96,14 @@ function cartReducer(state = {}, { type, count, good }) {
   }
 
   if (type === "CART_SET") {
-    const { _id, price } = good;
+    const { _id } = good;
     const newCount = count;
 
     if (newCount > 0) {
       return {
         ...state,
         [_id]: {
-          good: { _id, price },
+          good,
           count: newCount,
         },
       };
@@ -291,6 +291,7 @@ const gqlRegister = (login, password) => {
       UserUpsert(user: { login: $login, password: $password }) {
         login
         createdAt
+        _id
       }
     }`;
   return gql(registerMutation, { login: login, password: password });
@@ -306,10 +307,24 @@ const gqlLogin = (login, password) => {
 
   return gql(loginQuery, { login: login, password: password });
 };
-// Запрос истории заказов  OrderFind. сдается мне что это запрос на корзину OrderUpsert
+// Запрос истории заказов  OrderFind не проверено !!!
 
-const gqlOrderFind = (count, id) => {
-  const OrderFind = `mutation newOrder($goods: [OrderGoodInput]) {
+const gqlOrderFind = () => {
+  const OrderFind = `query OrderFind ($q: String) {OrderFind (query: $q) {
+    _id 
+    createdAt 
+    total 
+    
+}
+}`;
+
+  return gql(OrderFind, { q: "[{}]" });
+};
+
+// Запрос на корзину OrderUpsert
+
+const gqlOrderUpsert = (count, id) => {
+  const OrderUpsert = `mutation newOrder($goods: [OrderGoodInput]) {
           OrderUpsert(order: {orderGoods: $goods}) {
               _id
               createdAt
@@ -317,7 +332,7 @@ const gqlOrderFind = (count, id) => {
           }
         }`;
 
-  return gql(OrderFind, {
+  return gql(OrderUpsert, {
     goods: [
       {
         count: count,
@@ -336,8 +351,9 @@ const gqlOrderFind = (count, id) => {
 
 function jwtDecode(token) {
   const [, payload] = token.split(".");
-
+  // console.log(payload);
   const secretPart = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+  // console.log("SECRET PART");
   return JSON.parse(secretPart);
 }
 // экшены для авторизации
@@ -350,16 +366,138 @@ const actionAuthLogout = () => ({ type: "AUTH_LOGOUT" });
 function authReducer(state = {}, { type, token }) {
   if (type === "AUTH_LOGIN") {
     const payload = jwtDecode(token);
+    // console.log(payload);
+
+    userName.innerHTML = `Добро пожаловать,${payload.sub.login}`;
+
+    // что должно записываться в Локал Сторидж?
+
+    // localStorage.authToken = payload;
 
     localStorage.authToken = token;
 
     return { token, payload };
-  } else if (type === "AUTH_LOGOUT") {
-    delete localStorage.authToken;
-    return {};
-  } else {
-    return state;
   }
+  if (type === "AUTH_LOGOUT") {
+    delete localStorage.authToken;
+    userName.innerHTML = "";
+    return {};
+  }
+
+  return state;
+}
+
+// THUNK  логин и пароль
+
+function actionFullRegister(login, password) {
+  return async (dispatch) => {
+    try {
+      const data = await dispatch(
+        actionPromise("getRegister", gqlRegister(login, password))
+      );
+      // console.log(data  )
+      if (data.UserUpsert.login) {
+        await dispatch(actionFullLogin(login, password));
+        // console.log(login, password )
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+}
+
+function actionFullLogin(login, password) {
+  return async (dispatch) => {
+    const data = await dispatch(
+      actionPromise("getFullLogin", gqlLogin(login, password))
+    );
+    // console.log(data);
+
+    if (data) {
+      await dispatch(actionAuthLogin(data.login));
+    }
+  };
+}
+
+// БЛОК РЕГИСТРАЦИИ И ЛОГИНА
+
+// ВЫБОР МЕЖДУ ЛОГИНОМ И РЕГИСТРАЦИЕЙ как это все записать в  функцию? ?????
+
+// как оформить подписку ?????????
+
+// вход в меню пользователя
+
+const user = document.getElementById("userIco");
+
+user.onclick = () => {
+  const userInfo = document.querySelector(".login");
+  userInfo.style.display = "inline-block";
+  const close = document.getElementById("close");
+  close.onclick = () => {
+    userInfo.style.display = "none";
+  };
+};
+// при нажатии на кнопку регистрации запускаем функцию регистрации
+
+const getRegistr = document.getElementById("getRegistr");
+getRegistr.addEventListener("click", (event) => {
+  event.preventDefault();
+  register();
+});
+
+// при нажатии на кнопку входа запускаем функцию входа по логину
+
+const getSign = document.getElementById("getSign");
+getSign.addEventListener("click", (event) => {
+  event.preventDefault();
+  login();
+});
+
+// ПРОЦЕДУРА РЕГИСТРАЦИИ
+
+function register() {
+  const registr = document.getElementById("registr");
+  registr.style.display = "flex";
+
+  const loginInput = document.getElementById("loginInput");
+
+  const passwordInput = document.getElementById("passwordInput");
+
+  const button = document.getElementById("buttonReg");
+
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    const login = loginInput.value;
+    const password = passwordInput.value;
+    // console.log(login, password);
+    store.dispatch(actionFullRegister(login, password));
+    loginInput.value = "";
+    passwordInput.value = "";
+  });
+
+  const buttonRegClose = document.getElementById("buttonRegClose");
+  buttonRegClose.onclick = () => {
+    registr.style.display = "none";
+  };
+}
+// ЛОГИН
+
+function login() {
+  const fullLogin = document.getElementById("fullLogin");
+
+  const fullpassword = document.getElementById("fullpassword");
+
+  const button = document.getElementById("getSign");
+
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    const login = fullLogin.value;
+    const password = fullpassword.value;
+    // console.log(login, password);
+    store.dispatch(actionFullLogin(login, password));
+    fullLogin.value = "";
+    fullpassword.value = "";
+  });
 }
 
 // ===============================================================
@@ -405,10 +543,18 @@ function combineReducers(reducers) {
 
 function asideRootCatalog(resultOfGetState) {
   // выборка из пайлоада
+
   let rootCategories =
-    resultOfGetState.query.getCategories.payload.CategoryFind;
+    resultOfGetState.query?.getCategories?.payload?.CategoryFind;
+
+  if (!rootCategories) {
+    return;
+  }
   // заготовка для списка
   let aside = document.getElementById("asideRootCategory");
+
+  aside.innerHTML = "";
+
   for (let category of rootCategories) {
     let a = document.createElement("a");
 
@@ -416,27 +562,6 @@ function asideRootCatalog(resultOfGetState) {
     a.href = `#/category/${category._id}`;
     a.innerHTML = category.name;
     aside.append(a);
-
-    // пробую Window.onhashchange переход на следующий уровень, вывод каталога с картинками
-
-    window.onhashchange = async function () {
-      const hash = window.location.hash.split("/").pop();
-      if (hash) {
-        // console.log(hash)
-        store.dispatch(
-          actionPromise(
-            "getOneCatWithGoodsImgs",
-            await gqlOneCatWithGoodsImgs(hash)
-          )
-        );
-        aside.innerHTML = "";
-
-        // ошибка возникает изза этой подписки
-        store.subscribe(() => {
-          cartOfCategory(store.getState());
-        });
-      }
-    };
   }
 }
 
@@ -444,9 +569,16 @@ function asideRootCatalog(resultOfGetState) {
 
 function cartOfCategory(state) {
   // выборка из пайлоада
-  let podCategory = state.query.getOneCatWithGoodsImgs.payload.CategoryFindOne;
+
+  let podCategory =
+    state?.query?.getOneCatWithGoodsImgs?.payload?.CategoryFindOne;
+
+  if (!podCategory) {
+    return;
+  }
 
   console.log(podCategory);
+  // console.log(state);
 
   let nameOfCategory = document.getElementById("podCat");
 
@@ -463,31 +595,315 @@ function cartOfCategory(state) {
 
     let img = document.createElement("img");
     img.className = "img-card";
+    // console.log(elem.images);
     img.src = `http://shop-roles.node.ed.asmer.org.ua/${elem.images[0].url}`;
 
-
     let h = document.createElement("h2");
-    h.className = "h-card"; 
+    h.className = "h-card";
     h.innerHTML = elem.name;
 
     let p = document.createElement("p");
-    p.className = "p-card"; 
+    p.className = "p-card";
     p.innerHTML = `${elem.price} грн.`;
-    
-    let button = document.createElement('button');
-    button.className = "button";
-    button.innerText = "Подробнее"
 
-    
+    let button = document.createElement("a");
+    button.className = "button";
+    // a.innerHTML = `${elem.price} грн.`;
+    button.href = `#/podcategory/${elem._id}`;
+
+    button.innerText = "Подробнее";
+
     cardsInside.append(img);
     cardsInside.append(h);
     cardsInside.append(p);
+
     cardsItem.append(cardsInside);
     currentCategory.append(cardsItem);
-    cardsItem.appendChild(button)
-    
+    cardsItem.appendChild(button);
   }
 }
+
+// ВЫВОД ИНФОРМАЦИИ ПРО ОТДЕЛЬНЫЙ ТОВАР
+
+function cartOfOneGood(state) {
+  // выборка из пайлоада
+  let OneGood = state?.query?.getCatsWithImgsDescription?.payload?.GoodFindOne;
+
+  if (!OneGood) {
+    return;
+  }
+  // скрываем каталог товаров одной категории 
+
+  let item = document.getElementById("containerOfCategory");
+  item.style.visibility = "hidden";
+  
+  // отображение карточки отдельного товара и очистка перед заполнением
+  // эта карточка начала постоянно вылазить везде
+
+  let popup = document.getElementById("popup");
+
+  popup.style.display = "flex";
+  popup.innerHTML = "";
+
+  
+
+  let popupDiv = document.createElement("div");
+  popupDiv.className = "inside";
+  popup.append(popupDiv);
+
+  for (let image of OneGood.images) {
+    // console.log(image);
+    let img = document.createElement("img");
+    img.className = "img-card";
+    img.src = `http://shop-roles.node.ed.asmer.org.ua/${image.url}`;
+    popupDiv.append(img);
+  }
+
+  let h = document.createElement("h2");
+  h.className = "h-card";
+  h.innerHTML = OneGood.name;
+  popupDiv.append(h);
+
+  let p = document.createElement("p");
+  p.className = "p-card";
+  p.innerHTML = OneGood.description;
+  popupDiv.append(p);
+
+  let price = document.createElement("p");
+  price.className = "p-card";
+  price.innerHTML = ` ЦЕНА : ${OneGood.price} грн.`;
+  popupDiv.append(price);
+
+  let a = document.createElement("a");
+  a.className = "button";
+  a.id = "but";
+  a.href = `#/good/${OneGood._id}`;
+  a.innerText = "Купить";
+  popupDiv.append(a);
+
+  let button = document.createElement("button");
+  button.className = "button";
+  button.id = "but";
+
+  button.innerText = "ЗАКРЫТЬ";
+  popupDiv.append(button);
+
+
+  // при онклике скрываем карточку и очищаем, открывая каталог товаров одной категории
+
+  button.onclick = () => {
+    item.style.visibility = "visible";
+    
+    popup.style.display = "none";
+    
+    popup.innerHTML = "";
+   
+  };
+  // ДИСПАТЧ ПО КЛИКУ "ПОЛОЖИТЬ В КОРЗИНУ"
+
+  a.onclick = () => {
+    store.dispatch(actionCartAdd(OneGood));
+  };
+
+  console.log(OneGood);
+  // console.log(state);
+}
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// ОПЕРАЦИИ  С КОРЗИНОЙ. 
+
+function getBasket(state) {
+  let goodsToBuy = state.basket;
+  if (!goodsToBuy) {
+    return;
+  }
+  // назначаем корзину
+  const basket = document.getElementById("basket");
+
+  basket.innerHTML = "";
+
+//  переменная для подсчета итоговой суммы корзины
+
+  let totalSum = 0;
+  // прописываем каждый отдельный товар в корзине
+  for (let goods in goodsToBuy) {
+    let oneItemtoBuy = document.createElement("div");
+    oneItemtoBuy.className = "oneItemtoBuy";
+    basket.append(oneItemtoBuy);
+
+    let imgGoodsToBuy = document.createElement("img");
+    imgGoodsToBuy.className = "imgGoodsToBuy";
+    imgGoodsToBuy.src = `http://shop-roles.node.ed.asmer.org.ua/${goodsToBuy[goods].good.images[0].url}`;
+    oneItemtoBuy.append(imgGoodsToBuy);
+
+    let nameGoodsToBuy = document.createElement("h4");
+    nameGoodsToBuy.id = "nameGoodsToBuy";
+    nameGoodsToBuy.innerHTML = goodsToBuy[goods].good.name;
+    oneItemtoBuy.append(nameGoodsToBuy);
+
+    let acount = document.createElement("div");
+    acount.className = "acount";
+    oneItemtoBuy.append(acount);
+
+    // кнопка уменьшения кол-ва товара
+
+    let decreaseBtn = document.createElement("img");
+    decreaseBtn.id = "decreaseBtn";
+    decreaseBtn.className = "decrease-btn";
+    decreaseBtn.src = "./css/minus.ico";
+    acount.append(decreaseBtn);
+
+    decreaseBtn.onclick = ()=>{
+      //  диспатчим  actionCartSub на уменьшение товара
+      // или это дожно быть в отдельной функции?
+    }
+     
+
+      // индикатор количества товара 
+
+    let quantity = document.createElement("span");
+    quantity.id = "quantity";
+    quantity.innerHTML = goodsToBuy[goods].count;
+    acount.append(quantity);
+
+    quantity.onchange=()=>{
+      // Задание количества товара и запуск actionCartSet
+      // или это дожно быть в отдельной функции?
+    }
+
+    // кнопка уменьшения кол-ва товара
+
+    let increaseBtn = document.createElement("img");
+    increaseBtn.className = "increase-btn";
+    increaseBtn.id = "increaseBtn";
+    increaseBtn.src = "./css/add.ico";
+    acount.append(increaseBtn);
+
+    increaseBtn.onclick = ()=>{
+      //  диспатчим  actionAddtSub на увеличение товара
+      // или это дожно быть в отдельной функции?
+    }
+
+    let sum = document.createElement("div");
+    sum.id = "sum";
+    sum.innerHTML = `${
+      goodsToBuy[goods].good.price * goodsToBuy[goods].count
+    }грн.`;
+    acount.append(sum);
+
+    totalSum += goodsToBuy[goods].good.price * goodsToBuy[goods].count;
+
+    console.log(totalSum);
+
+    // кнопка удаления товара 
+
+    let deleteBtn = document.createElement("img");
+    deleteBtn.className = "increase-btn";
+    deleteBtn.id = "deleteBtn";
+    deleteBtn.src = "./css/delete1.ico";
+    acount.append(deleteBtn);
+    deleteBtn.onclick = ()=>{
+      //  диспатчим  actionCartDel на УДАЛЕНИЕ товара
+      // или это дожно быть в отдельной функции?
+    }
+  }
+  
+  // прописываем кнопки общие для целой корзины
+
+  // кнопка закрытия корзины
+
+  let closeBasket = document.createElement("img");
+  closeBasket.className = "close-basket";
+  closeBasket.id = "clickToCloseBasket";
+  closeBasket.src = "./css/close.ico";
+  basket.prepend(closeBasket);
+
+  // раздел с суммой 
+
+  let div = document.createElement("div");
+  basket.append(div);
+
+  let pOne = document.createElement("div");
+  pOne.innerHTML = "К оплате";
+  div.append(pOne);
+
+  let totalPrice = document.createElement("span");
+  totalPrice.innerHTML = `   ${totalSum}    грн.`;
+  pOne.append(totalPrice);
+
+  // раздел оплаты 
+
+  let divTwo = document.createElement("div");
+  basket.append(divTwo);
+
+  let button = document.createElement("button");
+  button.className = "buttonPay";
+
+  button.innerText = "ОПЛАТИТЬ";
+  divTwo.append(button);
+
+  button.onclick = () => {
+    //  по клику диспатч отправки заказа
+  };
+
+
+  // / раздел очистки корзины
+
+  let divThree = document.createElement("div");
+  basket.append(divThree);
+
+  let buttonClear = document.createElement("button");
+  buttonClear.className = "buttonPay";
+
+  buttonClear.innerText = "ОЧИСТИТЬ";
+  divThree.append(buttonClear);
+
+  buttonClear.onclick = () => {
+    //  по клику диспатч полной очистки actionCartClear
+  };
+  
+
+  // Отображениея
+
+  let open = document.getElementById("userBasket");
+
+  open.onclick = () => {
+    basket.style.display = "flex";
+  };
+  let close = document.getElementById("clickToCloseBasket");
+  close.onclick = () => {
+    
+    basket.style.display = "none";
+  };
+}
+
+// ХЭШ
+
+window.onhashchange = async function () {
+  const [, key, hash] = window.location.hash.split("/");
+  // console.log(key)
+  // const hash = window.location.hash.split("/").pop();
+  if (key === "category") {
+    // console.log(hash)
+    // console.log(key);
+    store.dispatch(
+      actionPromise(
+        "getOneCatWithGoodsImgs",
+        await gqlOneCatWithGoodsImgs(hash)
+      )
+    );
+  }
+  if (key === "podcategory") {
+    // console.log(hash)
+    // console.log(key);
+    store.dispatch(
+      actionPromise(
+        "getCatsWithImgsDescription",
+        await gqlCatsWithImgsDescription(hash)
+      )
+    );
+  }
+};
 
 // =========================================================
 
@@ -502,23 +918,30 @@ const store = createStore(combineReducers(reducers));
 store.dispatch(actionPromise("getCategories", gqlRootCats()));
 
 store.subscribe(() => {
-  console.log(store.getState());
+  // console.log(store.getState());
   asideRootCatalog(store.getState());
 });
+store.subscribe(() => {
+  cartOfCategory(store.getState());
+});
 
+store.subscribe(() => {
+  cartOfOneGood(store.getState());
+});
 
+store.subscribe(() => {
+  getBasket(store.getState());
+});
 
+store.subscribe(() => console.log(store.getState()));
 
+// getBasket(store.getState())
 
+// store.subscribe(() => {
+//   login(store.getState());
+// });
 
-
-
-
-
-
-
-
-
+// store.dispatch(actionFullRegister("your12Login", "yourPassword"));
 
 // store.subscribe(() => console.log(store.getState()))
 
@@ -527,8 +950,6 @@ store.subscribe(() => {
 // store.dispatch(actionCartAdd({ _id: "пиво", price: 50 }));
 
 // const store = createStore(localStoredReducer(cartReducer, "cart"));
-
-// store.subscribe(() => console.log(store.getState())); //
 
 // store.dispatch(actionCartAdd({ _id: "пиво", price: 50 }));
 // store.dispatch(actionCartAdd({ _id: "чипсы", price: 75 }));
@@ -550,8 +971,9 @@ store.subscribe(() => {
 // );
 
 // store.dispatch(
-//   actionPromise("РеГистрация: getRegister", gqlRegister("vasya1999", "пороль"))
+//   actionPromise("РеГистрация: getRegister", gqlRegister("vasya15221999", "пороль"))
 // );
+// actionFullRegister("vasya15221999", "пороль")
 
 // store.dispatch(
 //   actionPromise("Запит на логин: getLogin", gqlLogin("katya145", "пороль"))
@@ -559,8 +981,8 @@ store.subscribe(() => {
 
 // store.dispatch(
 //   actionPromise(
-//     "Запрос истории заказов: getOrderFind",
-//     gqlOrderFind(3, "62d3099ab74e1f5f2ec1a125")
+//     "Запрос истории заказов: getOrderUpsert",
+//     gqlOrderUpsert(3, "62d3099ab74e1f5f2ec1a125")
 //   )
 // );
 
