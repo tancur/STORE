@@ -119,6 +119,8 @@ main {
 }
 
 
+
+
 /* логин пароль */
 
 
@@ -261,7 +263,7 @@ main {
   margin: 15px;
   padding: 10px;
 }
-.button_small, .buttonPay, .clearButton{
+.button_small, .buttonPay, .clearButton, #quantity{
   height: 20px;
   width: 150px;
   font-size: 15px;
@@ -274,11 +276,16 @@ main {
 
 }
 
+#quantity{width: 50px;
+  text-align: center;
+}
+
 .close-basket {
   width: 30px;
   align-self: flex-end;
 }
 
+#history{margin-right: 50px;}
 
 
 
@@ -316,4 +323,4 @@ main {
   font-style: italic;
   cursor: pointer;}
 
-  .ico, .user, #close, .close-basket:hover{cursor: pointer;}
+  .ico, .user, #close, .close-basket, #history:hover{cursor: pointer;}

@@ -343,6 +343,19 @@ const gqlOrderUpsert = (count, id) => {
   });
 };
 
+// THUNK  корзины OrderUpsert ЗДЕСЬ НЕ МОГУ ОБРАТИТЬСЯ К count и id
+
+const actionOrderCreate = () => {
+  return async (dispatch, state) => {
+    const data = await dispatch(
+      actionPromise("getOrderUpsert", gqlOrderUpsert(state.basket))
+    );
+    if (data) {
+      await dispatch(actionCartClear());
+    }
+  };
+};
+
 // ======================================================
 
 // РЕДЮСЕР ДЛЯ АВТОРИЗАЦИИ (ТОКЕН)
@@ -368,13 +381,11 @@ function authReducer(state = {}, { type, token }) {
     const payload = jwtDecode(token);
     // console.log(payload);
 
-    userName.innerHTML = `Добро пожаловать,${payload.sub.login}`;
-
-    // что должно записываться в Локал Сторидж?
-
-    // localStorage.authToken = payload;
-
     localStorage.authToken = token;
+    // console.log(token);
+    if (localStorage.authToken) {
+      userName.innerHTML = `Добро пожаловать,${payload.sub.login}`;
+    }
 
     return { token, payload };
   }
@@ -421,9 +432,6 @@ function actionFullLogin(login, password) {
 
 // БЛОК РЕГИСТРАЦИИ И ЛОГИНА
 
-// ВЫБОР МЕЖДУ ЛОГИНОМ И РЕГИСТРАЦИЕЙ как это все записать в  функцию? ?????
-
-// как оформить подписку ?????????
 
 // вход в меню пользователя
 
@@ -455,15 +463,38 @@ getSign.addEventListener("click", (event) => {
 
 // ПРОЦЕДУРА РЕГИСТРАЦИИ
 
+// function register() {
+//   const registr = document.getElementById("registr");
+//   registr.style.display = "flex";
+
+//   const loginInput = document.getElementById("loginInput");
+
+//   const passwordInput = document.getElementById("passwordInput");
+
+//   const button = document.getElementById("buttonReg");
+
+//   button.addEventListener("click", (event) => {
+//     event.preventDefault();
+//     const login = loginInput.value;
+//     const password = passwordInput.value;
+//     // console.log(login, password);
+//     store.dispatch(actionFullRegister(login, password));
+//     loginInput.value = "";
+//     passwordInput.value = "";
+//   });
+
+//   const buttonRegClose = document.getElementById("buttonRegClose");
+//   buttonRegClose.onclick = () => {
+//     registr.style.display = "none";
+//   };
+// }
+
 function register() {
-  const registr = document.getElementById("registr");
-  registr.style.display = "flex";
+  const loginInput = document.getElementById("fullLogin");
 
-  const loginInput = document.getElementById("loginInput");
+  const passwordInput = document.getElementById("fullpassword");
 
-  const passwordInput = document.getElementById("passwordInput");
-
-  const button = document.getElementById("buttonReg");
+  const button = document.getElementById("getRegistr");
 
   button.addEventListener("click", (event) => {
     event.preventDefault();
@@ -474,12 +505,8 @@ function register() {
     loginInput.value = "";
     passwordInput.value = "";
   });
-
-  const buttonRegClose = document.getElementById("buttonRegClose");
-  buttonRegClose.onclick = () => {
-    registr.style.display = "none";
-  };
 }
+
 // ЛОГИН
 
 function login() {
@@ -498,7 +525,38 @@ function login() {
     fullLogin.value = "";
     fullpassword.value = "";
   });
+
+  // выход из аккаунта
+  let outRegistr = document.getElementById("outRegistr");
+  outRegistr.onclick = () => {
+    outRegistr.style.fontSize = "50px";
+
+    store.dispatch(actionAuthLogout());
+    fullLogin.value = "";
+    fullpassword.value = "";
+
+    console.log("fLogout clicked");
+  };
+
+  // outRegistr.addEventListener("click", (event) => {
+  //   event.preventDefault();
+
+  //   store.dispatch(actionAuthLogout());
+  //   console.log('fLogout clicked')
+
+  //   fullLogin.value = "";
+  //   fullpassword.value = "";
+  // });
 }
+
+// Проверка наличия токена при загрузке страницы
+window.addEventListener("DOMContentLoaded", () => {
+  const token = localStorage.authToken;
+  if (token) {
+    const payload = jwtDecode(token);
+    userName.innerHTML = `Добро пожаловать, ${payload.sub.login}`;
+  }
+});
 
 // ===============================================================
 
@@ -577,7 +635,7 @@ function cartOfCategory(state) {
     return;
   }
 
-  console.log(podCategory);
+  // console.log(podCategory);
   // console.log(state);
 
   let nameOfCategory = document.getElementById("podCat");
@@ -609,8 +667,7 @@ function cartOfCategory(state) {
     let button = document.createElement("a");
     button.className = "button";
     // a.innerHTML = `${elem.price} грн.`;
-    button.href = `#/podcategory/${elem._id}`;
-
+    button.href = `#/nogood/${elem._id}`;
     button.innerText = "Подробнее";
 
     cardsInside.append(img);
@@ -629,14 +686,20 @@ function cartOfOneGood(state) {
   // выборка из пайлоада
   let OneGood = state?.query?.getCatsWithImgsDescription?.payload?.GoodFindOne;
 
-  if (!OneGood) {
+  // ВНИМАНИЕ!!!!!!!!
+  // не надо рисовать товар, если это не страница товара
+
+  const [, key] = window.location.hash.split("/");
+  console.log(`ВЫВОД ИНФОРМАЦИИ ПРО ОТДЕЛЬНЫЙ ТОВАР ${key}`);
+
+  if (!OneGood || !(key === "nogood")) {
     return;
   }
-  // скрываем каталог товаров одной категории 
+  // скрываем каталог товаров одной категории
 
   let item = document.getElementById("containerOfCategory");
   item.style.visibility = "hidden";
-  
+
   // отображение карточки отдельного товара и очистка перед заполнением
   // эта карточка начала постоянно вылазить везде
 
@@ -644,8 +707,6 @@ function cartOfOneGood(state) {
 
   popup.style.display = "flex";
   popup.innerHTML = "";
-
-  
 
   let popupDiv = document.createElement("div");
   popupDiv.className = "inside";
@@ -688,16 +749,14 @@ function cartOfOneGood(state) {
   button.innerText = "ЗАКРЫТЬ";
   popupDiv.append(button);
 
-
   // при онклике скрываем карточку и очищаем, открывая каталог товаров одной категории
 
   button.onclick = () => {
     item.style.visibility = "visible";
-    
+
     popup.style.display = "none";
-    
+
     popup.innerHTML = "";
-   
   };
   // ДИСПАТЧ ПО КЛИКУ "ПОЛОЖИТЬ В КОРЗИНУ"
 
@@ -705,28 +764,37 @@ function cartOfOneGood(state) {
     store.dispatch(actionCartAdd(OneGood));
   };
 
-  console.log(OneGood);
+  // console.log(OneGood);
   // console.log(state);
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// ОПЕРАЦИИ  С КОРЗИНОЙ. 
+// ОПЕРАЦИИ  С КОРЗИНОЙ.
 
 function getBasket(state) {
   let goodsToBuy = state.basket;
-  if (!goodsToBuy) {
+
+  const [, key] = window.location.hash.split("/");
+  console.log(`$ОПЕРАЦИИ  С КОРЗИНОЙ  ${key}`);
+  const basket = document.getElementById("basket");
+
+  if (!goodsToBuy || Object.keys(goodsToBuy).length === 0) {
+    // если корзина нулевая очищаем ее
+    basket.innerHTML = "";
     return;
   }
   // назначаем корзину
-  const basket = document.getElementById("basket");
+  // const basket = document.getElementById("basket");
 
   basket.innerHTML = "";
 
-//  переменная для подсчета итоговой суммы корзины
+  //  переменная для подсчета итоговой суммы корзины
 
   let totalSum = 0;
   // прописываем каждый отдельный товар в корзине
   for (let goods in goodsToBuy) {
+    // console.log(goodsToBuy[goods].good.images[0].url);
+    // console.log(`http://shop-roles.node.ed.asmer.org.ua/${goodsToBuy[goods].good.images[0].url}`);
     let oneItemtoBuy = document.createElement("div");
     oneItemtoBuy.className = "oneItemtoBuy";
     basket.append(oneItemtoBuy);
@@ -734,6 +802,7 @@ function getBasket(state) {
     let imgGoodsToBuy = document.createElement("img");
     imgGoodsToBuy.className = "imgGoodsToBuy";
     imgGoodsToBuy.src = `http://shop-roles.node.ed.asmer.org.ua/${goodsToBuy[goods].good.images[0].url}`;
+
     oneItemtoBuy.append(imgGoodsToBuy);
 
     let nameGoodsToBuy = document.createElement("h4");
@@ -753,25 +822,26 @@ function getBasket(state) {
     decreaseBtn.src = "./css/minus.ico";
     acount.append(decreaseBtn);
 
-    decreaseBtn.onclick = ()=>{
-      //  диспатчим  actionCartSub на уменьшение товара
-      // или это дожно быть в отдельной функции?
-    }
-     
+    // если в корзине остается одно наименование товара, то количество обнуляется но это не отображается
+    // пока не выйдешь  и не зайдешь обратно
 
-      // индикатор количества товара 
+    decreaseBtn.onclick = () => {
+      store.dispatch(actionCartSub(goodsToBuy[goods].good));
+    };
 
-    let quantity = document.createElement("span");
+    // индикатор количества товара
+
+    let quantity = document.createElement("input");
     quantity.id = "quantity";
-    quantity.innerHTML = goodsToBuy[goods].count;
+    quantity.value = goodsToBuy[goods].count;
     acount.append(quantity);
 
-    quantity.onchange=()=>{
-      // Задание количества товара и запуск actionCartSet
-      // или это дожно быть в отдельной функции?
-    }
+    quantity.oninput = () => {
+      let count = parseInt(quantity.value, 10);
+      store.dispatch(actionCartSet(goodsToBuy[goods].good, count));
+    };
 
-    // кнопка уменьшения кол-ва товара
+    // кнопка увеличения кол-ва товара
 
     let increaseBtn = document.createElement("img");
     increaseBtn.className = "increase-btn";
@@ -779,10 +849,11 @@ function getBasket(state) {
     increaseBtn.src = "./css/add.ico";
     acount.append(increaseBtn);
 
-    increaseBtn.onclick = ()=>{
+    increaseBtn.onclick = () => {
       //  диспатчим  actionAddtSub на увеличение товара
-      // или это дожно быть в отдельной функции?
-    }
+
+      store.dispatch(actionCartAdd(goodsToBuy[goods].good));
+    };
 
     let sum = document.createElement("div");
     sum.id = "sum";
@@ -795,19 +866,20 @@ function getBasket(state) {
 
     console.log(totalSum);
 
-    // кнопка удаления товара 
+    // кнопка удаления товара
 
     let deleteBtn = document.createElement("img");
     deleteBtn.className = "increase-btn";
     deleteBtn.id = "deleteBtn";
     deleteBtn.src = "./css/delete1.ico";
     acount.append(deleteBtn);
-    deleteBtn.onclick = ()=>{
+    deleteBtn.onclick = () => {
+      store.dispatch(actionCartDel(goodsToBuy[goods].good));
       //  диспатчим  actionCartDel на УДАЛЕНИЕ товара
       // или это дожно быть в отдельной функции?
-    }
+    };
   }
-  
+
   // прописываем кнопки общие для целой корзины
 
   // кнопка закрытия корзины
@@ -818,7 +890,7 @@ function getBasket(state) {
   closeBasket.src = "./css/close.ico";
   basket.prepend(closeBasket);
 
-  // раздел с суммой 
+  // раздел с суммой
 
   let div = document.createElement("div");
   basket.append(div);
@@ -831,7 +903,7 @@ function getBasket(state) {
   totalPrice.innerHTML = `   ${totalSum}    грн.`;
   pOne.append(totalPrice);
 
-  // раздел оплаты 
+  // раздел  оформление заказа
 
   let divTwo = document.createElement("div");
   basket.append(divTwo);
@@ -843,9 +915,19 @@ function getBasket(state) {
   divTwo.append(button);
 
   button.onclick = () => {
+    const [, key1] = window.location.hash.split("/");
+
+    console.log(`проверка KEY при онклике на "ОТПРАВИТЬ ЗАКАЗ"  ${key1}`);
+
+    console.log(`вывод state.basket`);
+    console.log(state.basket);
+    
+    console.log( `ВЫБОРКА Object.values(state.basket)`);
+    console.log(Object.values(state.basket));
+
+    store.dispatch(actionOrderCreate());
     //  по клику диспатч отправки заказа
   };
-
 
   // / раздел очистки корзины
 
@@ -859,9 +941,8 @@ function getBasket(state) {
   divThree.append(buttonClear);
 
   buttonClear.onclick = () => {
-    //  по клику диспатч полной очистки actionCartClear
+    store.dispatch(actionCartClear());
   };
-  
 
   // Отображениея
 
@@ -872,10 +953,14 @@ function getBasket(state) {
   };
   let close = document.getElementById("clickToCloseBasket");
   close.onclick = () => {
-    
     basket.style.display = "none";
   };
 }
+
+// ИСТОРИЯ ЗАКАЗОВ
+
+
+
 
 // ХЭШ
 
@@ -893,7 +978,7 @@ window.onhashchange = async function () {
       )
     );
   }
-  if (key === "podcategory") {
+  if (key === "nogood") {
     // console.log(hash)
     // console.log(key);
     store.dispatch(
@@ -903,6 +988,9 @@ window.onhashchange = async function () {
       )
     );
   }
+  // if (key === "nogood") {
+
+
 };
 
 // =========================================================
