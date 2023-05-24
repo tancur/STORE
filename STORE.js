@@ -307,13 +307,14 @@ const gqlLogin = (login, password) => {
 
   return gql(loginQuery, { login: login, password: password });
 };
-// Запрос истории заказов  OrderFind не проверено !!!
+// Запрос истории заказов  OrderFind, выводит заказы, но не выводт полную инфу ( наименования, кратинки и пр ),  total = 0  !!!
 
 const gqlOrderFind = () => {
   const OrderFind = `query OrderFind ($q: String) {OrderFind (query: $q) {
     _id 
     createdAt 
     total 
+    orderGoods {good{name price description}}
     
 }
 }`;
@@ -323,7 +324,7 @@ const gqlOrderFind = () => {
 
 // Запрос на корзину OrderUpsert
 
-const gqlOrderUpsert = (count, id) => {
+const gqlOrderUpsert = (goods) => {
   const OrderUpsert = `mutation newOrder($goods: [OrderGoodInput]) {
           OrderUpsert(order: {orderGoods: $goods}) {
               _id
@@ -333,23 +334,51 @@ const gqlOrderUpsert = (count, id) => {
         }`;
 
   return gql(OrderUpsert, {
-    goods: [
-      {
-        count: count,
-        good: { _id: id },
-        // good: { _id: "62d3099ab74e1f5f2ec1a125" },
-      },
-    ],
+    goods: goods,
+    // good: { _id: "62d3099ab74e1f5f2ec1a125" },
   });
 };
 
-// THUNK  корзины OrderUpsert ЗДЕСЬ НЕ МОГУ ОБРАТИТЬСЯ К count и id
+// THUNK  корзины OrderUpsert сложный вариант
+
+// const actionOrderCreate = () => {
+//   return async (dispatch, state) => {
+//     const goodToOrder =
+//       state().basket &&
+//       state().basket.length &&
+//       state().basket.map((item) => ({
+//         count: item.count,
+//         good: item.good.__id,
+//       }));
+
+//     const data = await dispatch(
+//       actionPromise("getOrderUpsert", gqlOrderUpsert(goodToOrder))
+//     );
+//     if (data) {
+//       await dispatch(actionCartClear());
+//     }
+//   };
+// };
+
+// вариант попроще вывод в отдельную переменную из стэйта нужных полей :count и good
+
+// надо попробовать вернуть исходные 2 переменные в gqlOrderUpsert
 
 const actionOrderCreate = () => {
   return async (dispatch, state) => {
+    let goodToOrder = [];
+
+    if (state.basket && state.basket.length) {
+      goodToOrder = state.basket.map((item) => ({
+        count: item.count,
+        good: item.good.__id,
+      }));
+    }
+
     const data = await dispatch(
-      actionPromise("getOrderUpsert", gqlOrderUpsert(state.basket))
+      actionPromise("getOrderUpsert", gqlOrderUpsert(goodToOrder))
     );
+
     if (data) {
       await dispatch(actionCartClear());
     }
@@ -431,7 +460,6 @@ function actionFullLogin(login, password) {
 }
 
 // БЛОК РЕГИСТРАЦИИ И ЛОГИНА
-
 
 // вход в меню пользователя
 
@@ -529,7 +557,7 @@ function login() {
   // выход из аккаунта
   let outRegistr = document.getElementById("outRegistr");
   outRegistr.onclick = () => {
-    outRegistr.style.fontSize = "50px";
+    // outRegistr.style.fontSize = "50px";
 
     store.dispatch(actionAuthLogout());
     fullLogin.value = "";
@@ -537,16 +565,6 @@ function login() {
 
     console.log("fLogout clicked");
   };
-
-  // outRegistr.addEventListener("click", (event) => {
-  //   event.preventDefault();
-
-  //   store.dispatch(actionAuthLogout());
-  //   console.log('fLogout clicked')
-
-  //   fullLogin.value = "";
-  //   fullpassword.value = "";
-  // });
 }
 
 // Проверка наличия токена при загрузке страницы
@@ -690,7 +708,7 @@ function cartOfOneGood(state) {
   // не надо рисовать товар, если это не страница товара
 
   const [, key] = window.location.hash.split("/");
-  console.log(`ВЫВОД ИНФОРМАЦИИ ПРО ОТДЕЛЬНЫЙ ТОВАР ${key}`);
+  // console.log(`ВЫВОД ИНФОРМАЦИИ ПРО ОТДЕЛЬНЫЙ ТОВАР ${key}`);
 
   if (!OneGood || !(key === "nogood")) {
     return;
@@ -774,8 +792,8 @@ function cartOfOneGood(state) {
 function getBasket(state) {
   let goodsToBuy = state.basket;
 
-  const [, key] = window.location.hash.split("/");
-  console.log(`$ОПЕРАЦИИ  С КОРЗИНОЙ  ${key}`);
+  // const [, key] = window.location.hash.split("/");
+  // console.log(`$ОПЕРАЦИИ  С КОРЗИНОЙ  ${key}`);
   const basket = document.getElementById("basket");
 
   if (!goodsToBuy || Object.keys(goodsToBuy).length === 0) {
@@ -917,13 +935,13 @@ function getBasket(state) {
   button.onclick = () => {
     const [, key1] = window.location.hash.split("/");
 
-    console.log(`проверка KEY при онклике на "ОТПРАВИТЬ ЗАКАЗ"  ${key1}`);
+    // console.log(`проверка KEY при онклике на "ОТПРАВИТЬ ЗАКАЗ"  ${key1}`);
 
-    console.log(`вывод state.basket`);
-    console.log(state.basket);
-    
-    console.log( `ВЫБОРКА Object.values(state.basket)`);
-    console.log(Object.values(state.basket));
+    // console.log(`вывод state.basket`);
+    // console.log(state.basket);
+
+    // console.log(`ВЫБОРКА Object.values(state.basket)`);
+    // console.log(Object.values(state.basket));
 
     store.dispatch(actionOrderCreate());
     //  по клику диспатч отправки заказа
@@ -959,8 +977,13 @@ function getBasket(state) {
 
 // ИСТОРИЯ ЗАКАЗОВ
 
-
-
+function orderHistory(state) {
+  let history = document.getElementById("historyLink");
+  history.href = "#/history/";
+  console.log("orderHistory");
+  console.log(state);
+  
+}
 
 // ХЭШ
 
@@ -988,9 +1011,17 @@ window.onhashchange = async function () {
       )
     );
   }
-  // if (key === "nogood") {
+  if (key === "history") {
+    console.log(key);
+    console.log(hash);
 
-
+    store.dispatch(
+          actionPromise(
+            "orderFind",
+            await gqlOrderFind()
+    )
+    );
+  }
 };
 
 // =========================================================
@@ -1021,7 +1052,11 @@ store.subscribe(() => {
   getBasket(store.getState());
 });
 
-store.subscribe(() => console.log(store.getState()));
+store.subscribe(() => {
+  orderHistory(store.getState());
+});
+
+// store.subscribe(() => console.log(store.getState()));
 
 // getBasket(store.getState())
 

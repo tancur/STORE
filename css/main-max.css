@@ -94,7 +94,7 @@ main {
 #basket {
   display: none;
   flex-direction: column;
-  border: 1px solid #ccc;
+  /* border: 1px solid #ccc; */
   padding: 10px;
   margin-bottom: 10px;
 }
@@ -124,7 +124,7 @@ main {
 /* логин пароль */
 
 
-#popup {
+#popup, #history {
   display: none;
   
   flex-direction: column;
@@ -285,7 +285,9 @@ main {
   align-self: flex-end;
 }
 
-#history{margin-right: 50px;}
+#historyLink{margin-right: 50px;}
+
+
 
 
 
