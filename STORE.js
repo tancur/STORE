@@ -313,8 +313,8 @@ const gqlOrderFind = () => {
   const OrderFind = `query OrderFind ($q: String) {OrderFind (query: $q) {
     _id 
     createdAt 
-    total 
-    orderGoods {good{name price description}}
+   
+    orderGoods {count good{name price }}
     
 }
 }`;
@@ -339,51 +339,29 @@ const gqlOrderUpsert = (goods) => {
   });
 };
 
-// THUNK  корзины OrderUpsert сложный вариант
-
-// const actionOrderCreate = () => {
-//   return async (dispatch, state) => {
-//     const goodToOrder =
-//       state().basket &&
-//       state().basket.length &&
-//       state().basket.map((item) => ({
-//         count: item.count,
-//         good: item.good.__id,
-//       }));
-
-//     const data = await dispatch(
-//       actionPromise("getOrderUpsert", gqlOrderUpsert(goodToOrder))
-//     );
-//     if (data) {
-//       await dispatch(actionCartClear());
-//     }
-//   };
-// };
-
-// вариант попроще вывод в отдельную переменную из стэйта нужных полей :count и good
-
-// надо попробовать вернуть исходные 2 переменные в gqlOrderUpsert
+// THUNK  корзины OrderUpsert сложный вариант Кирилла
 
 const actionOrderCreate = () => {
   return async (dispatch, state) => {
-    let goodToOrder = [];
-
-    if (state.basket && state.basket.length) {
-      goodToOrder = state.basket.map((item) => ({
+    const goodToOrder =
+      state().basket &&
+      Object.values(state().basket) &&
+      Object.values(state().basket).map((item) => ({
         count: item.count,
-        good: item.good.__id,
+        good: { _id: item.good._id },
       }));
-    }
+    console.log(`ВЫВОД goodToOrder`);
+    console.log(goodToOrder);
 
     const data = await dispatch(
       actionPromise("getOrderUpsert", gqlOrderUpsert(goodToOrder))
     );
-
     if (data) {
       await dispatch(actionCartClear());
     }
   };
 };
+
 
 // ======================================================
 
@@ -649,13 +627,35 @@ function cartOfCategory(state) {
   let podCategory =
     state?.query?.getOneCatWithGoodsImgs?.payload?.CategoryFindOne;
 
-  if (!podCategory) {
+  const [, key] = window.location.hash.split("/");
+  console.log(`ВКАТАЛОГА ПОДКАТЕГОРИЙ ${key}`);
+
+  if (!podCategory || !(key === "category")) {
     return;
   }
 
   // console.log(podCategory);
+
   // console.log(state);
 
+  // кнопка скрыть подкаталог товаров одной категории
+
+  //   let item = document.getElementById("itemCat");
+
+  //   let hiddenBtn = document.getElementById("our-works");
+
+  //   hiddenBtn.innerText = "Закрыть страницу";
+
+  //   hiddenBtn.onclick = () => {
+  //     //   console.log("hiddenBtn нажата")
+
+  //     item.style.visibility = "hidden";
+  //   };
+
+  // // восстанавливаем содержимое подкатегории
+  //   item.style.visibility = "visible";
+
+  // название подктегории
   let nameOfCategory = document.getElementById("podCat");
 
   nameOfCategory.innerHTML = podCategory.name;
@@ -719,7 +719,6 @@ function cartOfOneGood(state) {
   item.style.visibility = "hidden";
 
   // отображение карточки отдельного товара и очистка перед заполнением
-  // эта карточка начала постоянно вылазить везде
 
   let popup = document.getElementById("popup");
 
@@ -792,8 +791,8 @@ function cartOfOneGood(state) {
 function getBasket(state) {
   let goodsToBuy = state.basket;
 
-  // const [, key] = window.location.hash.split("/");
-  // console.log(`$ОПЕРАЦИИ  С КОРЗИНОЙ  ${key}`);
+  const [, key] = window.location.hash.split("/");
+  console.log(`$ОПЕРАЦИИ  С КОРЗИНОЙ  ${key}`);
   const basket = document.getElementById("basket");
 
   if (!goodsToBuy || Object.keys(goodsToBuy).length === 0) {
@@ -977,13 +976,96 @@ function getBasket(state) {
 
 // ИСТОРИЯ ЗАКАЗОВ
 
+// let historyLink = document.getElementById("historyLink");
+
+//   historyLink.href = "#/history/";
+
 function orderHistory(state) {
-  let history = document.getElementById("historyLink");
-  history.href = "#/history/";
-  console.log("orderHistory");
-  console.log(state);
-  
+  // кликабельная ссылка для перехода к списку заказов
+
+  const historyLink = document.getElementById("historyLink");
+  historyLink.href = "#/history/";
+
+  const orderFind = state?.query?.orderFind?.payload?.OrderFind;
+
+  // const goodsToOrderFind = Object.values(orderFind);
+
+  console.log( state);
+  console.log( orderFind);
+
+  const q = Object.values(orderFind)
+  console.log( q);
+  // проверки
+  const [, key] = window.location.hash.split("/");
+  // console.log(`ВЫВОД  let orderFind ${key}`);
+  // console.log( orderFind);
+
+  // console.log(typeof orderFind);
+
+  // const goodsToOrderFind =
+  // orderFind?.Object.values(orderFind)?.
+  //     Object.values(orderFind).map((item) => ({
+  //       count: item.count,
+  //       good: { _id: item.good._id },
+  //     }));
+  //   console.log(`ВЫВОД goodToOrder`);
+  //   console.log(goodToOrder);
+
+
+  if (!(key === "history")) {
+    return;
+  }
 }
+  
+
+// скрываем каталог товаров одной категории
+
+// let item = document.getElementById("itemCat");
+
+// item.style.visibility = "hidden";
+
+// оболочка для списка
+
+// let history = document.getElementById("history");
+//     history.style.display = "flex";
+//   history.innerHTML = "";
+
+// // строю карточку вывода каждого  заказов
+
+// itemCat.style.display = "none";
+
+// asideRootCategory.style.display = "none";
+
+// let historyDiv = document.createElement("div");
+// historyDiv.className = "history-inside";
+// history.append(historyDiv);
+
+// let createdAtElement = document.createElement("p");
+// let createdAt = new Date(parseInt(order.createdAt)).toLocaleString();
+// createdAtElement.innerHTML = `Дата создания: ${createdAt}`;
+// console.log(createdAt)
+// historyDiv.append(createdAtElement);
+
+// // кнопка закрытия
+
+// let button = document.createElement("button");
+//   button.className = "button_small";
+//   // button.id = "but";
+
+//   button.innerText = "ЗАКРЫТЬ";
+//   history.append(button);
+
+//   // при онклике скрываем карточку и очищаем, открывая доступ для просмотра каталог товаров одной категории
+
+//   button.onclick = () => {
+//     item.style.visibility = "visible";
+
+//     history.style.display = "none";
+
+// history.innerHTML = "";
+// };
+
+// console.log("orderHistory");
 
 // ХЭШ
 
@@ -1015,12 +1097,7 @@ window.onhashchange = async function () {
     console.log(key);
     console.log(hash);
 
-    store.dispatch(
-          actionPromise(
-            "orderFind",
-            await gqlOrderFind()
-    )
-    );
+    store.dispatch(actionPromise("orderFind", await gqlOrderFind()));
   }
 };
 

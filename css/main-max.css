@@ -188,13 +188,13 @@ main {
   border-radius: 15px;
 }
 
-.our-works {
+/* .our-works {
   text-transform: uppercase;
   font-weight: bold;
   line-height: 100px;
   transition-duration: 3s;
   
-}
+} */
 
 .cards-container {
   display: flex;
@@ -240,7 +240,7 @@ main {
   color: rgb(85, 40, 8);
 }
 
-.inside {
+.inside, .history-inside {
   padding-top: 10px;
 }
 
@@ -296,10 +296,10 @@ main {
 
 
 
-.our-works:hover {
+#our-works:hover {
   cursor: pointer;
   color: blueviolet;
-  transform: scale(2);
+  /* transform: scale(2); */
 }
 
 .cards-item:hover {
