@@ -992,9 +992,25 @@ function orderHistory(state) {
 
   console.log( state);
   console.log( orderFind);
+  
+ 
+ for (let order in orderFind) {
+  
+  // console.log (orderFind[order].createdAt);
 
-  const q = Object.values(orderFind)
-  console.log( q);
+  // console.log (orderFind[order]._id);
+  console.log (orderFind[order]);
+
+  // console.log (orderFind[order].orderGoods);
+
+  for (let goods of order){
+
+    console.log (goods.orderGoods);
+  }
+
+}
+ 
+
   // проверки
   const [, key] = window.location.hash.split("/");
   // console.log(`ВЫВОД  let orderFind ${key}`);
