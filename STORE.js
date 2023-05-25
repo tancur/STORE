@@ -362,7 +362,6 @@ const actionOrderCreate = () => {
   };
 };
 
-
 // ======================================================
 
 // РЕДЮСЕР ДЛЯ АВТОРИЗАЦИИ (ТОКЕН)
@@ -808,6 +807,7 @@ function getBasket(state) {
   //  переменная для подсчета итоговой суммы корзины
 
   let totalSum = 0;
+  let totalCount=0;
   // прописываем каждый отдельный товар в корзине
   for (let goods in goodsToBuy) {
     // console.log(goodsToBuy[goods].good.images[0].url);
@@ -853,10 +853,14 @@ function getBasket(state) {
     quantity.value = goodsToBuy[goods].count;
     acount.append(quantity);
 
+    
+
     quantity.oninput = () => {
       let count = parseInt(quantity.value, 10);
       store.dispatch(actionCartSet(goodsToBuy[goods].good, count));
+      
     };
+    
 
     // кнопка увеличения кол-ва товара
 
@@ -880,6 +884,9 @@ function getBasket(state) {
     acount.append(sum);
 
     totalSum += goodsToBuy[goods].good.price * goodsToBuy[goods].count;
+    totalCount+= goodsToBuy[goods].count;
+
+
 
     console.log(totalSum);
 
@@ -919,6 +926,10 @@ function getBasket(state) {
   let totalPrice = document.createElement("span");
   totalPrice.innerHTML = `   ${totalSum}    грн.`;
   pOne.append(totalPrice);
+
+
+  // передаем колво товара на значок корзины
+  countOfBasketGoods.innerText= totalCount;
 
   // раздел  оформление заказа
 
@@ -974,114 +985,126 @@ function getBasket(state) {
   };
 }
 
-// ИСТОРИЯ ЗАКАЗОВ
-
-// let historyLink = document.getElementById("historyLink");
-
-//   historyLink.href = "#/history/";
+// ИСТОРИЯ ЗАКАЗОВ если не поклацать по странице предварительно, история не подгружается!!!!!!!!
 
 function orderHistory(state) {
+  const orderFind = state?.query?.orderFind?.payload?.OrderFind;
+
   // кликабельная ссылка для перехода к списку заказов
 
   const historyLink = document.getElementById("historyLink");
   historyLink.href = "#/history/";
 
-  const orderFind = state?.query?.orderFind?.payload?.OrderFind;
-
-  // const goodsToOrderFind = Object.values(orderFind);
-
-  console.log( state);
-  console.log( orderFind);
-  
- 
- for (let order in orderFind) {
-  
-  // console.log (orderFind[order].createdAt);
-
-  // console.log (orderFind[order]._id);
-  console.log (orderFind[order]);
-
-  // console.log (orderFind[order].orderGoods);
-
-  for (let goods of order){
-
-    console.log (goods.orderGoods);
-  }
-
-}
- 
-
-  // проверки
   const [, key] = window.location.hash.split("/");
-  // console.log(`ВЫВОД  let orderFind ${key}`);
-  // console.log( orderFind);
-
-  // console.log(typeof orderFind);
-
-  // const goodsToOrderFind =
-  // orderFind?.Object.values(orderFind)?.
-  //     Object.values(orderFind).map((item) => ({
-  //       count: item.count,
-  //       good: { _id: item.good._id },
-  //     }));
-  //   console.log(`ВЫВОД goodToOrder`);
-  //   console.log(goodToOrder);
-
 
   if (!(key === "history")) {
     return;
   }
-}
+
+  // console.log(state);
+  // console.log(orderFind);
+
   
+  historyLink.onclick = () => {  
+    // ГЛЮЧНЯ: надо несколько раз по кнопке жать чтоб что то появилось !!!!!!!!!!!!!
 
-// скрываем каталог товаров одной категории
+// оболочка для списка заказов создается по клику
+    let history = document.getElementById("history");
+    history.style.display = "flex";
+    history.innerHTML = "";
 
-// let item = document.getElementById("itemCat");
+// скрытие боковой панели и подкатегрий
+    itemCat.style.visibility = "hidden";
+    asideRootCategory.style.visibility = "hidden";
 
-// item.style.visibility = "hidden";
+    // // строю карточку вывода каждого  из заказов
+    let historyDiv = document.createElement("div");
+    historyDiv.className = "history-div";
+    history.append(historyDiv);
 
-// оболочка для списка
+   
+    for (let order in orderFind) {
+      // console.log(orderFind[order]);
 
-// let history = document.getElementById("history");
-//     history.style.display = "flex";
-//   history.innerHTML = "";
+      // ячейка для одного заказа
 
-// // строю карточку вывода каждого  заказов
+      let cartOfOrder = document.createElement("div");
+      cartOfOrder.className = "history-inside";
+      historyDiv.append(cartOfOrder);
 
-// itemCat.style.display = "none";
+      // из каждого заказа вывожу дату и айдти заказа массив с товаром и кол-вом
 
-// asideRootCategory.style.display = "none";
+      // номер заказа
 
-// let historyDiv = document.createElement("div");
-// historyDiv.className = "history-inside";
-// history.append(historyDiv);
+      let orderId = document.createElement("div");
+      orderId.innerHTML = `номер заказа: ${orderFind[order]._id}`;
+      cartOfOrder.append(orderId);
 
-// let createdAtElement = document.createElement("p");
-// let createdAt = new Date(parseInt(order.createdAt)).toLocaleString();
-// createdAtElement.innerHTML = `Дата создания: ${createdAt}`;
-// console.log(createdAt)
-// historyDiv.append(createdAtElement);
+      // дата создания заказа
 
-// // кнопка закрытия
+      let createdAtElement = document.createElement("div");
+      let createdAt = new Date(
+        parseInt(orderFind[order].createdAt)
+      ).toLocaleString();
+      createdAtElement.innerHTML = `Дата создания: ${createdAt}`;
+      cartOfOrder.append(createdAtElement);
 
-// let button = document.createElement("button");
-//   button.className = "button_small";
-//   // button.id = "but";
+      // console.log(orderFind[order].createdAt);
+      // console.log(orderFind[order]._id);
+      // console.log(orderFind[order].orderGoods);
 
-//   button.innerText = "ЗАКРЫТЬ";
-//   history.append(button);
+      // /  раскрываю элемент orderGoods из каждого товара вывожу количество
+      for (let goods of orderFind[order].orderGoods) {
 
-//   // при онклике скрываем карточку и очищаем, открывая доступ для просмотра каталог товаров одной категории
+        let goodsDiv = document.createElement("div");
+        goodsDiv.className = "history-inside";
+        cartOfOrder.append(goodsDiv);
 
-//   button.onclick = () => {
-//     item.style.visibility = "visible";
+        let goodsСount = document.createElement("p");
+        goodsСount.innerHTML = `количество: ${goods.count}`;
+        goodsDiv.append(goodsСount);
+        // console.log(goods.count);
+        // console.log(goods.good);
 
-//     history.style.display = "none";
+        // наименование
 
-// history.innerHTML = "";
-// };
+        let goodName = document.createElement("p");
+        goodName.innerHTML = `наименование: ${goods.good.name}`;
+        goodsDiv.append(goodName);
+        // console.log(goods.good.name);
 
-// console.log("orderHistory");
+        // цена
+
+        let goodPrice = document.createElement("p");
+        goodPrice.innerHTML = `цена: ${goods.good.price}`;
+        goodsDiv.append(goodPrice);
+        // console.log(goods.good.price);
+      }
+    }
+
+     // кнопка закрытия ПРОРИСОВЫВАЕТСЯ ДАЖЕ ЕСЛИ ПУСТАЯ ИСТОРИЯ!!!!
+
+     let button = document.createElement("button");
+     button.className = "button_small";
+     button.innerText = "ЗАКРЫТЬ";
+     historyDiv.append(button);
+ 
+     // при онклике скрываем карточку и очищаем, открывая доступ для просмотра каталог товаров одной категории
+ 
+     button.onclick = () => {
+       itemCat.style.visibility = "visible";
+       asideRootCategory.style.visibility = "visible";
+ 
+       history.style.display = "none";
+       history.innerHTML = "";
+     };
+    // history.append(historyDiv);
+    // historyDiv.append(button);
+   
+  };
+}
+
+
 
 // ХЭШ
 
