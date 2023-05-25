@@ -797,12 +797,15 @@ function getBasket(state) {
   if (!goodsToBuy || Object.keys(goodsToBuy).length === 0) {
     // если корзина нулевая очищаем ее
     basket.innerHTML = "";
+    countOfBasketGoods.innerText= "";
+
     return;
   }
   // назначаем корзину
   // const basket = document.getElementById("basket");
 
   basket.innerHTML = "";
+  countOfBasketGoods.innerText= "";
 
   //  переменная для подсчета итоговой суммы корзины
 
@@ -839,8 +842,7 @@ function getBasket(state) {
     decreaseBtn.src = "./css/minus.ico";
     acount.append(decreaseBtn);
 
-    // если в корзине остается одно наименование товара, то количество обнуляется но это не отображается
-    // пока не выйдешь  и не зайдешь обратно
+    
 
     decreaseBtn.onclick = () => {
       store.dispatch(actionCartSub(goodsToBuy[goods].good));
