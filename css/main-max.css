@@ -134,10 +134,10 @@ main {
 
 #popup, #history{
   display: none;
-  
+  padding: 30px;
   flex-direction: column;
-  position : fixed;
-  padding-bottom: 15px;
+  /* position : fixed; */
+  /* padding-bottom: 15px; */
 
   justify-content: space-between;
   align-items: center;

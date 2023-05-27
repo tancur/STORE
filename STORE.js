@@ -1007,7 +1007,7 @@ function orderHistory(state) {
   // console.log(orderFind);
 
   
-  historyLink.onclick = () => {  
+  // historyLink.onclick = () => {  
     // ГЛЮЧНЯ: надо несколько раз по кнопке жать чтоб что то появилось !!!!!!!!!!!!!
 
 // оболочка для списка заказов создается по клику
@@ -1016,8 +1016,8 @@ function orderHistory(state) {
     history.innerHTML = "";
 
 // скрытие боковой панели и подкатегрий
-    itemCat.style.visibility = "hidden";
-    asideRootCategory.style.visibility = "hidden";
+    itemCat.style.display = "none";
+    // asideRootCategory.style.visibility = "hidden";
 
     // // строю карточку вывода каждого  из заказов
     let historyDiv = document.createElement("div");
@@ -1094,8 +1094,8 @@ function orderHistory(state) {
      // при онклике скрываем карточку и очищаем, открывая доступ для просмотра каталог товаров одной категории
  
      button.onclick = () => {
-       itemCat.style.visibility = "visible";
-       asideRootCategory.style.visibility = "visible";
+       itemCat.style.display = "block";
+      //  asideRootCategory.style.visibility = "visible";
  
        history.style.display = "none";
        history.innerHTML = "";
@@ -1103,7 +1103,7 @@ function orderHistory(state) {
     // history.append(historyDiv);
     // historyDiv.append(button);
    
-  };
+  // };
 }
 
 
@@ -1115,6 +1115,7 @@ window.onhashchange = async function () {
   // console.log(key)
   // const hash = window.location.hash.split("/").pop();
   if (key === "category") {
+    itemCat.style.display = "block";
     // console.log(hash)
     // console.log(key);
     store.dispatch(
@@ -1125,6 +1126,7 @@ window.onhashchange = async function () {
     );
   }
   if (key === "nogood") {
+    itemCat.style.display = "none";
     // console.log(hash)
     // console.log(key);
     store.dispatch(
